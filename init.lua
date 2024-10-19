@@ -653,7 +653,7 @@ require('lazy').setup({
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
-        --
+        go = { 'goimports', 'gofmt' },
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
       },
@@ -919,21 +919,15 @@ lspconfig.yamlls.setup {
         enable = true, -- Enable the built-in schema store
       },
       schemas = {
-        -- Add the Buildkite schema here
         ['https://raw.githubusercontent.com/buildkite/pipeline-schema/refs/heads/main/schema.json'] = {
-          -- Specify the path where this schema should be applied
-          -- Adjust the glob pattern as necessary
           '/.buildkite/*.yml',
           '/.buildkite/*.yaml',
         },
       },
     },
   },
-  on_attach = function(client, bufnr)
-    -- Your custom on_attach configuration (if any)
-  end,
 }
 
-vim.cmd 'colorscheme slate'
+vim.cmd 'colorscheme minicyan'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
