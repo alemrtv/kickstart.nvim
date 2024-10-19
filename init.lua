@@ -95,6 +95,8 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { noremap = true, silent = true })
+
 -- TIP: Disable arrow keys in normal mode
 vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
@@ -122,12 +124,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   callback = function()
     vim.highlight.on_yank()
   end,
-})
-
--- Automatically change the current working directory to the file's directory
-vim.api.nvim_create_autocmd('BufEnter', {
-  pattern = '*',
-  command = 'silent! lcd %:p:h',
 })
 
 vim.cmd 'filetype on'
@@ -170,7 +166,6 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'https://tpope.io/vim-sleuth.git', -- Detect tabstop and shiftwidth automatically
   'https://tpope.io/vim/fugitive.git',
-  { 'morhetz/gruvbox', priority = 1000 },
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -326,10 +321,22 @@ require('lazy').setup({
           mappings = {
             i = { ['<c-enter>'] = 'to_fuzzy_refine' },
           },
-          path_display = { 'absolute' },
+          path_display = { 'truncate' },
+          file_ignore_patterns = { 'vendor/*' },
           layout_strategy = 'horizontal',
+          layout_config = {
+            vertical = {
+              width = 0.9, -- Increase width to 90% of the window size
+              height = 0.95, -- Optionally increase the height for more results
+              preview_height = 0.4, -- Adjust preview height if needed
+            },
+          },
         },
-        -- pickers = {}
+        pickers = {
+          find_files = {
+            hidden = true,
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -549,6 +556,7 @@ require('lazy').setup({
       local servers = {
         -- clangd = {},
         gopls = {},
+        yamlls = {},
         -- pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -589,6 +597,8 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'yaml-language-server',
+        'yamlls',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -854,6 +864,30 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
   -- { import = 'custom.plugins' },
+  {
+    'ray-x/go.nvim',
+    dependencies = { -- optional packages
+      'ray-x/guihua.lua',
+      'neovim/nvim-lspconfig',
+      'nvim-treesitter/nvim-treesitter',
+    },
+    config = function()
+      require('go').setup()
+
+      local format_sync_grp = vim.api.nvim_create_augroup('GoFormat', {})
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        pattern = '*.go',
+        callback = function()
+          -- Ensure the goimports function is called before saving
+          require('go.format').goimports()
+        end,
+        group = format_sync_grp,
+      })
+    end,
+    event = { 'CmdlineEnter' },
+    ft = { 'go', 'gomod' },
+    build = ':lua require("go.install").update_all_sync()', -- if you need to install/update all binaries
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
@@ -876,6 +910,30 @@ require('lazy').setup({
   },
 })
 
-vim.cmd 'colorscheme gruvbox'
+local lspconfig = require 'lspconfig'
+
+lspconfig.yamlls.setup {
+  settings = {
+    yaml = {
+      schemaStore = {
+        enable = true, -- Enable the built-in schema store
+      },
+      schemas = {
+        -- Add the Buildkite schema here
+        ['https://raw.githubusercontent.com/buildkite/pipeline-schema/refs/heads/main/schema.json'] = {
+          -- Specify the path where this schema should be applied
+          -- Adjust the glob pattern as necessary
+          '/.buildkite/*.yml',
+          '/.buildkite/*.yaml',
+        },
+      },
+    },
+  },
+  on_attach = function(client, bufnr)
+    -- Your custom on_attach configuration (if any)
+  end,
+}
+
+vim.cmd 'colorscheme slate'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
