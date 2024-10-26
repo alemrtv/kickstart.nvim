@@ -84,8 +84,16 @@ vim.opt.scrolloff = 10
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+-- Go to the next buffer
+vim.api.nvim_set_keymap('n', ']b', ':bnext<CR>', { noremap = true, silent = true })
+-- Go to the previous buffer
+vim.api.nvim_set_keymap('n', '[b', ':bprevious<CR>', { noremap = true, silent = true })
+
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+
+-- Bind GoFillStruct to <leader>gs
+vim.api.nvim_set_keymap('n', '<leader>gs', ':GoFillStruct<CR>', { noremap = true, silent = true })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -96,6 +104,7 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 vim.keymap.set('n', '<leader>tv', ':vsplit | terminal<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<leader>th', ':split | terminal<CR>', { noremap = true, silent = true })
 
 -- TIP: Disable arrow keys in normal mode
 vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -139,6 +148,14 @@ vim.api.nvim_create_autocmd('FileType', {
   command = 'setlocal tabstop=2 shiftwidth=2 softtabstop=2 expandtab',
 })
 
+-- Auto-lint on save for Markdown files
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*.md',
+  callback = function()
+    vim.lsp.buf.format { async = true }
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -172,7 +189,7 @@ require('lazy').setup({
   --
   -- Use `opts = {}` to force a plugin to be loaded.
   --
-
+  { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
   -- Here is a more advanced example where we pass configuration
   -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
   --    require('gitsigns').setup({ ... })
@@ -322,7 +339,7 @@ require('lazy').setup({
             i = { ['<c-enter>'] = 'to_fuzzy_refine' },
           },
           path_display = { 'truncate' },
-          file_ignore_patterns = { 'vendor/*' },
+          --          file_ignore_patterns = { 'vendor/*' },
           layout_strategy = 'horizontal',
           layout_config = {
             vertical = {
@@ -653,7 +670,7 @@ require('lazy').setup({
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
-        go = { 'goimports', 'gofmt' },
+        -- go = { 'goimports', 'gofmt' },
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
       },
@@ -888,6 +905,12 @@ require('lazy').setup({
     ft = { 'go', 'gomod' },
     build = ':lua require("go.install").update_all_sync()', -- if you need to install/update all binaries
   },
+  {
+    'jose-elias-alvarez/null-ls.nvim',
+  },
+  {
+    'jay-babu/mason-null-ls.nvim', -- Bridges mason with null-ls
+  },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
@@ -923,11 +946,33 @@ lspconfig.yamlls.setup {
           '/.buildkite/*.yml',
           '/.buildkite/*.yaml',
         },
+        ['https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/kustomization.json'] = {
+          'kustomization.yaml',
+          'kustomization.yml',
+        },
       },
     },
   },
 }
 
-vim.cmd 'colorscheme minicyan'
+local null_ls = require 'null-ls'
+local mason_null_ls = require 'mason-null-ls'
+
+-- Set up null-ls with markdownlint
+null_ls.setup {
+  sources = {
+    null_ls.builtins.diagnostics.markdownlint.with {
+      extra_args = { '--config', '.markdownlint.json' }, -- Optional: specify a config file if you use one
+    },
+  },
+}
+
+-- Ensure markdownlint-cli is installed via Mason
+mason_null_ls.setup {
+  ensure_installed = { 'markdownlint' }, -- Automatically installs markdownlint-cli via Mason
+  automatic_installation = true, -- Automatically install if not found
+}
+
+vim.cmd.colorscheme 'catppuccin'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
