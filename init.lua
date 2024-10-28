@@ -189,7 +189,7 @@ require('lazy').setup({
   --
   -- Use `opts = {}` to force a plugin to be loaded.
   --
-  { 'catppuccin/nvim', name = 'catppuccin', priority = 1000 },
+  { 'ellisonleao/gruvbox.nvim', priority = 1000 },
   -- Here is a more advanced example where we pass configuration
   -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
   --    require('gitsigns').setup({ ... })
@@ -364,6 +364,7 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'yaml_schema')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -905,11 +906,66 @@ require('lazy').setup({
     ft = { 'go', 'gomod' },
     build = ':lua require("go.install").update_all_sync()', -- if you need to install/update all binaries
   },
+  { 'jose-elias-alvarez/null-ls.nvim' },
+  { 'jay-babu/mason-null-ls.nvim' },
+  { 'b0o/schemastore.nvim' },
   {
-    'jose-elias-alvarez/null-ls.nvim',
-  },
-  {
-    'jay-babu/mason-null-ls.nvim', -- Bridges mason with null-ls
+    'someone-stole-my-name/yaml-companion.nvim',
+    config = function()
+      local cfg = require('yaml-companion').setup {
+        -- detect k8s schemas based on file content
+        builtin_matchers = {
+          kubernetes = { enabled = true },
+        },
+
+        -- schemas available in Telescope picker
+        schemas = {
+          -- not loaded automatically, manually select with
+          -- :Telescope yaml_schema
+          {
+            name = 'Argo CD Application',
+            uri = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/argoproj.io/application_v1alpha1.json',
+          },
+          {
+            name = 'SealedSecret',
+            uri = 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/bitnami.com/sealedsecret_v1alpha1.json',
+          },
+          -- schemas below are automatically loaded, but added
+          -- them here so that they show up in the statusline
+          {
+            name = 'Kustomization',
+            uri = 'https://json.schemastore.org/kustomization.json',
+          },
+          {
+            name = 'GitHub Workflow',
+            uri = 'https://json.schemastore.org/github-workflow.json',
+          },
+        },
+
+        lspconfig = {
+          settings = {
+            yaml = {
+              validate = true,
+              schemaStore = {
+                enable = false,
+                url = '',
+              },
+
+              -- schemas from store, matched by filename
+              -- loaded automatically
+              schemas = require('schemastore').yaml.schemas {
+                select = {
+                  'kustomization.yaml',
+                  'GitHub Workflow',
+                },
+              },
+            },
+          },
+        },
+      }
+
+      require('lspconfig')['yamlls'].setup(cfg)
+    end,
   },
 }, {
   ui = {
@@ -933,28 +989,6 @@ require('lazy').setup({
   },
 })
 
-local lspconfig = require 'lspconfig'
-
-lspconfig.yamlls.setup {
-  settings = {
-    yaml = {
-      schemaStore = {
-        enable = true, -- Enable the built-in schema store
-      },
-      schemas = {
-        ['https://raw.githubusercontent.com/buildkite/pipeline-schema/refs/heads/main/schema.json'] = {
-          '/.buildkite/*.yml',
-          '/.buildkite/*.yaml',
-        },
-        ['https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/kustomization.json'] = {
-          'kustomization.yaml',
-          'kustomization.yml',
-        },
-      },
-    },
-  },
-}
-
 local null_ls = require 'null-ls'
 local mason_null_ls = require 'mason-null-ls'
 
@@ -973,6 +1007,6 @@ mason_null_ls.setup {
   automatic_installation = true, -- Automatically install if not found
 }
 
-vim.cmd.colorscheme 'catppuccin'
+vim.cmd.colorscheme 'gruvbox'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
