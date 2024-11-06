@@ -186,14 +186,11 @@ require('lazy').setup({
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
-  --
   -- Use `opts = {}` to force a plugin to be loaded.
-  --
-  { 'ellisonleao/gruvbox.nvim', priority = 1000 },
   -- Here is a more advanced example where we pass configuration
   -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
   --    require('gitsigns').setup({ ... })
-  --
+
   -- See `:help gitsigns` to understand what the configuration keys do
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -339,7 +336,7 @@ require('lazy').setup({
             i = { ['<c-enter>'] = 'to_fuzzy_refine' },
           },
           path_display = { 'truncate' },
-          --          file_ignore_patterns = { 'vendor/*' },
+          file_ignore_patterns = { 'vendor/*' },
           layout_strategy = 'horizontal',
           layout_config = {
             vertical = {
@@ -1007,6 +1004,6 @@ mason_null_ls.setup {
   automatic_installation = true, -- Automatically install if not found
 }
 
-vim.cmd.colorscheme 'gruvbox'
+vim.cmd.colorscheme 'retrobox'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

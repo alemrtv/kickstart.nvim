@@ -14,7 +14,15 @@ return {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    buffers = {
+      follow_current_file = {
+        enabled = true,
+      },
+    },
     filesystem = {
+      follow_current_file = {
+        enabled = true,
+      },
       filtered_items = {
         visible = true,
         hide_dotfiles = false,
